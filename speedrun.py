@@ -3,6 +3,7 @@ import requests
 import itertools
 import time
 
+from database import db
 from hades import CATEGORIES, SUBCATEGORIES, GAME_ID, TIMINGS, IGNORE
 from hades_map import SUBCATEGORIES_MAP, TIMINGS_MAP
 
@@ -14,6 +15,8 @@ def log(msg):
 
 user_leaderboard = defaultdict(lambda: {"score": 0, "runs": {}})
 user_points = defaultdict(int)
+
+db.initialize()
 
 print("Getting all run data...")
 
@@ -58,16 +61,16 @@ for category_name, category_id in CATEGORIES.items():
                 if len(unique_players) == 10:
                     break
 
-place_width = len(str(len(user_leaderboard.keys()))) + 1
+place_width = len(str(len([user for user in user_leaderboard.keys() if user_leaderboard[user]["score"] >= 5]))) + 1
 
 for place, user_id in enumerate(sorted(user_leaderboard, key=lambda x: user_leaderboard[x]["score"], reverse=True)):
-    user_name = requests.get(f"https://speedrun.com/api/v1/users/{user_id}").json()["data"]["names"]["international"]
-    if user_leaderboard[user_id]['score'] > 5:
-        print(f"{str(place+1).rjust(place_width)} - {user_name} - {user_leaderboard[user_id]['score']}")
+    user_name = db.get_user_name_by_id(user_id)
+    if not user_name:
+        user_name = requests.get(f"https://speedrun.com/api/v1/users/{user_id}").json()["data"]["names"]["international"]
+        db.add_user(user_id, user_name)
+        time.sleep(1)
 
-        # for run_url, run_data in user_leaderboard[user_id]["runs"].items():
-        #     log(f"{run_data[1]} for {run_data[0]}")
-        # log()
+    if user_leaderboard[user_id]['score'] < 5:
+        break
 
-    time.sleep(1)
-
+    print(f"{str(place+1).rjust(place_width)} - {user_name} - {user_leaderboard[user_id]['score']}")
