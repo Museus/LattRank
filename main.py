@@ -11,7 +11,7 @@ VERBOSE = False
 
 def log(msg):
     if VERBOSE:
-        log(msg)
+        print(msg)
 
 user_leaderboard = defaultdict(lambda: {"score": 0, "runs": {}})
 user_points = defaultdict(int)
@@ -88,6 +88,9 @@ if new_runs:
             db.update_score(user_id, user_leaderboard[user_id]['score'])
 
         print(f"{str(place+1).rjust(place_width)} - {user_name} - {user_leaderboard[user_id]['score']}")
+        if VERBOSE:
+            for run_url, run_data in user_leaderboard[user_id]['runs'].items():
+                log(f"  - {run_data[1]} points from {run_data[0]}")
 
 else:
     all_user_data = db.get_all_user_data()
